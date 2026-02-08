@@ -88,11 +88,23 @@ def format_validation_error(error: str) -> str:
 def suggest_fix(error: str) -> Optional[str]:
     """Suggest a fix for a validation error.
 
+    Note: The validator already includes specific suggestions in error messages.
+    This function provides programmatic access to generic fix categories, which
+    may be useful for automated tooling that needs to categorize error types.
+
     Args:
         error: Validation error message
 
     Returns:
-        Suggested fix, or None if no specific fix can be suggested
+        Generic fix suggestion category, or None if no category matches.
+        For specific suggestions, parse the error message directly as the
+        validator includes concrete suggestions (e.g., "Suggestion: 'fixed-name'").
+
+    Example:
+        >>> error = "Skill name must be lowercase. Suggestion: 'my-skill'"
+        >>> category = suggest_fix(error)
+        >>> category
+        'Convert all characters in the name to lowercase'
     """
     if "lowercase" in error.lower():
         return "Convert all characters in the name to lowercase"
