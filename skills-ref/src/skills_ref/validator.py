@@ -39,17 +39,31 @@ def _validate_name(name: str, skill_dir: Path) -> list[str]:
     if len(name) > MAX_SKILL_NAME_LENGTH:
         errors.append(
             f"Skill name '{name}' exceeds {MAX_SKILL_NAME_LENGTH} character limit "
-            f"({len(name)} chars)"
+            f"({len(name)} chars). Consider using a shorter, more concise name."
         )
 
     if name != name.lower():
-        errors.append(f"Skill name '{name}' must be lowercase")
+        lowercase_suggestion = name.lower()
+        errors.append(
+            f"Skill name '{name}' must be lowercase. "
+            f"Suggestion: '{lowercase_suggestion}'"
+        )
 
     if name.startswith("-") or name.endswith("-"):
-        errors.append("Skill name cannot start or end with a hyphen")
+        trimmed = name.strip("-")
+        errors.append(
+            f"Skill name cannot start or end with a hyphen. "
+            f"Suggestion: '{trimmed}'"
+        )
 
     if "--" in name:
-        errors.append("Skill name cannot contain consecutive hyphens")
+        fixed = name
+        while "--" in fixed:
+            fixed = fixed.replace("--", "-")
+        errors.append(
+            f"Skill name cannot contain consecutive hyphens. "
+            f"Suggestion: '{fixed}'"
+        )
 
     if not all(c.isalnum() or c == "-" for c in name):
         errors.append(
@@ -61,7 +75,8 @@ def _validate_name(name: str, skill_dir: Path) -> list[str]:
         dir_name = unicodedata.normalize("NFKC", skill_dir.name)
         if dir_name != name:
             errors.append(
-                f"Directory name '{skill_dir.name}' must match skill name '{name}'"
+                f"Directory name '{skill_dir.name}' must match skill name '{name}'. "
+                f"Rename the directory to '{name}' or update the 'name' field in SKILL.md."
             )
 
     return errors
