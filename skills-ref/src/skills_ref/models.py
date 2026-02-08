@@ -26,7 +26,18 @@ class SkillProperties:
     metadata: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        """Convert to dictionary, excluding None values."""
+        """Convert to dictionary, excluding None values.
+
+        Returns:
+            Dictionary representation of skill properties. None values are excluded,
+            and empty metadata dict is excluded. The 'allowed_tools' field is serialized
+            as 'allowed-tools' (hyphenated) to match the YAML frontmatter format.
+
+        Example:
+            >>> props = SkillProperties(name="my-skill", description="Test skill")
+            >>> props.to_dict()
+            {'name': 'my-skill', 'description': 'Test skill'}
+        """
         result = {"name": self.name, "description": self.description}
         if self.license is not None:
             result["license"] = self.license

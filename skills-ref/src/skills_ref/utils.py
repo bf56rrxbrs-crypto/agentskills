@@ -10,54 +10,54 @@ from .validator import validate
 
 def get_skill_info(skill_dir: Path) -> dict:
     """Get comprehensive information about a skill.
-    
+
     Args:
         skill_dir: Path to the skill directory
-        
+
     Returns:
         Dictionary containing skill properties and validation status
-        
+
     Example:
         >>> info = get_skill_info(Path("my-skill"))
         >>> print(info["name"])
         my-skill
     """
     skill_dir = Path(skill_dir)
-    
+
     result = {
         "path": str(skill_dir),
         "valid": False,
         "properties": None,
         "validation_errors": [],
     }
-    
+
     try:
         props = read_properties(skill_dir)
         result["properties"] = props.to_dict()
-        
+
         errors = validate(skill_dir)
         result["validation_errors"] = errors
         result["valid"] = len(errors) == 0
     except SkillError as e:
         result["validation_errors"] = [str(e)]
-    
+
     return result
 
 
 def count_skills(directory: Path, recursive: bool = False) -> int:
     """Count the number of valid skills in a directory.
-    
+
     Args:
         directory: Directory to search
         recursive: Whether to search recursively
-        
+
     Returns:
         Number of valid skills found
     """
     from .parser import find_skill_md
-    
+
     count = 0
-    
+
     if recursive:
         for skill_md in directory.rglob("SKILL.md"):
             count += 1
@@ -68,16 +68,16 @@ def count_skills(directory: Path, recursive: bool = False) -> int:
         for item in directory.iterdir():
             if item.is_dir() and find_skill_md(item):
                 count += 1
-    
+
     return count
 
 
 def format_validation_error(error: str) -> str:
     """Format a validation error message with better readability.
-    
+
     Args:
         error: Raw error message
-        
+
     Returns:
         Formatted error message
     """
@@ -87,10 +87,10 @@ def format_validation_error(error: str) -> str:
 
 def suggest_fix(error: str) -> Optional[str]:
     """Suggest a fix for a validation error.
-    
+
     Args:
         error: Validation error message
-        
+
     Returns:
         Suggested fix, or None if no specific fix can be suggested
     """
@@ -104,5 +104,5 @@ def suggest_fix(error: str) -> Optional[str]:
         return "Rename the directory or update the name field in SKILL.md"
     elif "exceeds" in error and "character limit" in error:
         return "Shorten the field to meet the character limit"
-    
+
     return None

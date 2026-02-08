@@ -25,9 +25,13 @@ def main():
 
 
 @main.command("validate")
-@click.argument("skill_paths", type=click.Path(exists=True, path_type=Path), nargs=-1, required=True)
+@click.argument(
+    "skill_paths", type=click.Path(exists=True, path_type=Path), nargs=-1, required=True
+)
 @click.option("--json", "json_output", is_flag=True, help="Output results as JSON")
-@click.option("--quiet", "-q", is_flag=True, help="Only output errors (no success messages)")
+@click.option(
+    "--quiet", "-q", is_flag=True, help="Only output errors (no success messages)"
+)
 def validate_cmd(skill_paths: tuple[Path, ...], json_output: bool, quiet: bool):
     """Validate one or more skill directories.
 
@@ -46,10 +50,7 @@ def validate_cmd(skill_paths: tuple[Path, ...], json_output: bool, quiet: bool):
             skill_path = skill_path.parent
 
         errors = validate(skill_path)
-        results[str(skill_path)] = {
-            "valid": len(errors) == 0,
-            "errors": errors
-        }
+        results[str(skill_path)] = {"valid": len(errors) == 0, "errors": errors}
 
         if errors:
             has_errors = True
@@ -137,17 +138,19 @@ def list_cmd(directory: Path, json_output: bool, recursive: bool):
     """
     try:
         skills = _discover_skills(directory, recursive)
-        
+
         if json_output:
             skills_data = []
             for skill_path in skills:
                 try:
                     props = read_properties(skill_path)
-                    skills_data.append({
-                        "path": str(skill_path),
-                        "name": props.name,
-                        "description": props.description
-                    })
+                    skills_data.append(
+                        {
+                            "path": str(skill_path),
+                            "name": props.name,
+                            "description": props.description,
+                        }
+                    )
                 except SkillError:
                     # Skip skills that can't be read
                     continue
@@ -162,7 +165,9 @@ def list_cmd(directory: Path, json_output: bool, recursive: bool):
                         props = read_properties(skill_path)
                         click.echo(f"  {props.name}")
                         click.echo(f"    Path: {skill_path}")
-                        click.echo(f"    Description: {props.description[:80]}{'...' if len(props.description) > 80 else ''}")
+                        click.echo(
+                            f"    Description: {props.description[:80]}{'...' if len(props.description) > 80 else ''}"
+                        )
                         click.echo()
                     except SkillError as e:
                         click.echo(f"  {skill_path} (error: {e})")
@@ -174,16 +179,16 @@ def list_cmd(directory: Path, json_output: bool, recursive: bool):
 
 def _discover_skills(directory: Path, recursive: bool) -> list[Path]:
     """Discover skill directories in the given directory.
-    
+
     Args:
         directory: Directory to search
         recursive: Whether to search recursively
-        
+
     Returns:
         List of paths to skill directories
     """
     skills = []
-    
+
     if recursive:
         # Search recursively for SKILL.md files
         for skill_md in directory.rglob("SKILL.md"):
@@ -199,7 +204,7 @@ def _discover_skills(directory: Path, recursive: bool) -> list[Path]:
                 skill_md = find_skill_md(item)
                 if skill_md:
                     skills.append(item)
-    
+
     return sorted(skills)
 
 

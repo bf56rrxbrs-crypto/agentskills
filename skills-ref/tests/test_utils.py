@@ -1,8 +1,11 @@
 """Tests for utility module."""
 
-from pathlib import Path
-
-from skills_ref.utils import count_skills, format_validation_error, get_skill_info, suggest_fix
+from skills_ref.utils import (
+    count_skills,
+    format_validation_error,
+    get_skill_info,
+    suggest_fix,
+)
 
 
 def test_get_skill_info_valid(tmp_path):
@@ -16,7 +19,7 @@ license: MIT
 ---
 Body
 """)
-    
+
     info = get_skill_info(skill_dir)
     assert info["valid"] is True
     assert info["validation_errors"] == []
@@ -35,7 +38,7 @@ description: Test
 ---
 Body
 """)
-    
+
     info = get_skill_info(skill_dir)
     assert info["valid"] is False
     assert len(info["validation_errors"]) > 0
@@ -46,7 +49,7 @@ def test_get_skill_info_missing_skill_md(tmp_path):
     """get_skill_info should handle missing SKILL.md."""
     skill_dir = tmp_path / "empty"
     skill_dir.mkdir()
-    
+
     info = get_skill_info(skill_dir)
     assert info["valid"] is False
     assert len(info["validation_errors"]) > 0
@@ -61,7 +64,7 @@ description: First
 ---
 Body
 """)
-    
+
     (tmp_path / "skill-b").mkdir()
     (tmp_path / "skill-b" / "SKILL.md").write_text("""---
 name: skill-b
@@ -69,7 +72,7 @@ description: Second
 ---
 Body
 """)
-    
+
     count = count_skills(tmp_path, recursive=False)
     assert count == 2
 
@@ -83,7 +86,7 @@ description: First
 ---
 Body
 """)
-    
+
     (tmp_path / "level1" / "level2" / "skill-b").mkdir(parents=True)
     (tmp_path / "level1" / "level2" / "skill-b" / "SKILL.md").write_text("""---
 name: skill-b
@@ -91,7 +94,7 @@ description: Second
 ---
 Body
 """)
-    
+
     count = count_skills(tmp_path, recursive=True)
     assert count == 2
 
