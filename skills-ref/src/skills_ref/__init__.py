@@ -4,6 +4,7 @@ from .errors import ParseError, SkillError, ValidationError
 from .models import SkillProperties
 from .parser import find_skill_md, read_properties
 from .prompt import to_prompt
+from .utils import count_skills, get_skill_info
 from .validator import validate
 
 __all__ = [
@@ -15,6 +16,8 @@ __all__ = [
     "validate",
     "read_properties",
     "to_prompt",
+    "get_skill_info",
+    "count_skills",
 ]
 
 __version__ = "0.1.0"

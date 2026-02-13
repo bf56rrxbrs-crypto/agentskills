@@ -14,18 +14,31 @@ def to_prompt(skill_dirs: list[Path]) -> str:
     models or preferences.
 
     Args:
-        skill_dirs: List of paths to skill directories
+        skill_dirs: List of paths to skill directories. Each directory should
+            contain a valid SKILL.md file.
 
     Returns:
         XML string with <available_skills> block containing each skill's
-        name, description, and location.
+        name, description, and location. Returns an empty block if no
+        skills are provided.
 
-    Example output:
+    Raises:
+        SkillError: If any skill directory is invalid or SKILL.md cannot be parsed.
+
+    Example:
+        >>> skills = [Path("pdf-reader"), Path("code-formatter")]
+        >>> xml = to_prompt(skills)
+        >>> print(xml)
         <available_skills>
         <skill>
         <name>pdf-reader</name>
         <description>Read and extract text from PDF files</description>
         <location>/path/to/pdf-reader/SKILL.md</location>
+        </skill>
+        <skill>
+        <name>code-formatter</name>
+        <description>Format source code</description>
+        <location>/path/to/code-formatter/SKILL.md</location>
         </skill>
         </available_skills>
     """
