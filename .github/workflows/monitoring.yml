@@ -1,0 +1,120 @@
+name: Continuous Monitoring
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  dependency-check:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check for outdated dependencies
+        id: check-deps
+        run: |
+          cd skills-ref
+          pip install pip-check
+          pip-check --not-required || echo "updates_available=true" >> $GITHUB_OUTPUT
+
+      - name: Create issue for updates
+        if: steps.check-deps.outputs.updates_available == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'dependencies'
+            });
+            
+            const existingIssue = issues.data.find(issue => 
+              issue.title.includes('Dependency Updates Available')
+            );
+            
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🔄 Dependency Updates Available',
+                body: 'Automated check has found dependency updates available. Please review and update as needed.',
+                labels: ['dependencies', 'automated']
+              });
+            }
+
+  health-check:
+    name: Repository Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd skills-ref
+          pip install -e .
+          pip install pytest ruff
+
+      - name: Run full test suite
+        run: |
+          cd skills-ref
+          pytest -v --tb=short
+
+      - name: Run security checks
+        run: |
+          cd skills-ref
+          pip install safety bandit
+          safety check || true
+          bandit -r src/ -f json -o ../bandit-report.json || true
+        continue-on-error: true
+
+      - name: Generate health report
+        run: |
+          echo "# Repository Health Report" > health-report.md
+          echo "Generated: $(date)" >> health-report.md
+          echo "" >> health-report.md
+          
+          cd skills-ref
+          
+          # Test status
+          if pytest --quiet; then
+            echo "✅ Tests: All passing" >> ../health-report.md
+          else
+            echo "❌ Tests: Some failures" >> ../health-report.md
+          fi
+          
+          # Code quality
+          if ruff check . --quiet; then
+            echo "✅ Linting: Clean" >> ../health-report.md
+          else
+            echo "⚠️ Linting: Issues found" >> ../health-report.md
+          fi
+          
+          cd ..
+          cat health-report.md
+
+      - name: Upload health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report
+          path: health-report.md

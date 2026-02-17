@@ -1,0 +1,92 @@
+name: Auto-Fix Issues
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  auto-fix:
+    name: Auto-Fix on Command
+    runs-on: ubuntu-latest
+    if: |
+      github.event.issue.pull_request &&
+      (contains(github.event.comment.body, '/fix') || contains(github.event.comment.body, '/format'))
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            core.setOutput('ref', pr.data.head.ref);
+            core.setOutput('sha', pr.data.head.sha);
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd skills-ref
+          pip install -e .
+          pip install pytest ruff
+
+      - name: Auto-fix linting issues
+        if: contains(github.event.comment.body, '/fix')
+        run: |
+          cd skills-ref
+          ruff check --fix .
+          ruff format .
+
+      - name: Auto-format code
+        if: contains(github.event.comment.body, '/format')
+        run: |
+          cd skills-ref
+          ruff format .
+
+      - name: Commit changes
+        id: commit
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --staged --quiet; then
+            echo "changes_made=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-fix: Apply linting and formatting fixes"
+            git push
+            echo "changes_made=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changesMade = '${{ steps.commit.outputs.changes_made }}' === 'true';
+            const message = changesMade 
+              ? '🤖 Auto-fix applied! Linting and formatting issues have been resolved.'
+              : '✅ Auto-fix checked: No issues found, code is already clean!';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
