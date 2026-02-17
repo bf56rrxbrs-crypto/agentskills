@@ -63,6 +63,15 @@ skills-ref read-properties path/to/skill
 
 # Generate <available_skills> XML for agent prompts
 skills-ref to-prompt path/to/skill-a path/to/skill-b
+
+# Run automated code review
+skills-ref auto-review .
+
+# Run review and auto-fix issues
+skills-ref auto-review --fix .
+
+# Output review results as JSON
+skills-ref auto-review --json .
 ```
 
 ### Python API
