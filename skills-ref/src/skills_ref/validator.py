@@ -39,17 +39,29 @@ def _validate_name(name: str, skill_dir: Path) -> list[str]:
     if len(name) > MAX_SKILL_NAME_LENGTH:
         errors.append(
             f"Skill name '{name}' exceeds {MAX_SKILL_NAME_LENGTH} character limit "
-            f"({len(name)} chars)"
+            f"({len(name)} chars). Consider using a shorter, more concise name."
         )
 
     if name != name.lower():
-        errors.append(f"Skill name '{name}' must be lowercase")
+        lowercase_suggestion = name.lower()
+        errors.append(
+            f"Skill name '{name}' must be lowercase. "
+            f"Suggestion: '{lowercase_suggestion}'"
+        )
 
     if name.startswith("-") or name.endswith("-"):
-        errors.append("Skill name cannot start or end with a hyphen")
+        trimmed = name.strip("-")
+        errors.append(
+            f"Skill name cannot start or end with a hyphen. Suggestion: '{trimmed}'"
+        )
 
     if "--" in name:
-        errors.append("Skill name cannot contain consecutive hyphens")
+        fixed = name
+        while "--" in fixed:
+            fixed = fixed.replace("--", "-")
+        errors.append(
+            f"Skill name cannot contain consecutive hyphens. Suggestion: '{fixed}'"
+        )
 
     if not all(c.isalnum() or c == "-" for c in name):
         errors.append(
@@ -61,7 +73,8 @@ def _validate_name(name: str, skill_dir: Path) -> list[str]:
         dir_name = unicodedata.normalize("NFKC", skill_dir.name)
         if dir_name != name:
             errors.append(
-                f"Directory name '{skill_dir.name}' must match skill name '{name}'"
+                f"Directory name '{skill_dir.name}' must match skill name '{name}'. "
+                f"Rename the directory to '{name}' or update the 'name' field in SKILL.md."
             )
 
     return errors
@@ -121,12 +134,29 @@ def validate_metadata(metadata: dict, skill_dir: Optional[Path] = None) -> list[
     This is the core validation function that works on already-parsed metadata,
     avoiding duplicate file I/O when called from the parser.
 
+    Validates:
+    - Presence of required fields (name, description)
+    - Name format (lowercase, kebab-case, no leading/trailing hyphens, max 64 chars)
+    - Description format (non-empty, max 1024 chars)
+    - Compatibility format (if present, max 500 chars)
+    - No unexpected fields beyond the allowed set
+    - Directory name matches skill name (if skill_dir provided)
+
     Args:
         metadata: Parsed YAML frontmatter dictionary
         skill_dir: Optional path to skill directory (for name-directory match check)
 
     Returns:
-        List of validation error messages. Empty list means valid.
+        List of validation error messages with actionable suggestions.
+        Empty list means all validation checks passed.
+
+    Example:
+        >>> metadata = {"name": "Invalid-Name", "description": "Test"}
+        >>> errors = validate_metadata(metadata)
+        >>> len(errors) > 0
+        True
+        >>> any("lowercase" in e for e in errors)
+        True
     """
     errors = []
     errors.extend(_validate_metadata_fields(metadata))
@@ -150,11 +180,28 @@ def validate_metadata(metadata: dict, skill_dir: Optional[Path] = None) -> list[
 def validate(skill_dir: Path) -> list[str]:
     """Validate a skill directory.
 
+    Performs comprehensive validation including:
+    - Directory exists and is a directory
+    - SKILL.md file exists (either SKILL.md or skill.md)
+    - Valid YAML frontmatter
+    - All required fields present (name, description)
+    - Field formats meet specification requirements
+    - No unexpected fields present
+
     Args:
-        skill_dir: Path to the skill directory
+        skill_dir: Path to the skill directory to validate
 
     Returns:
-        List of validation error messages. Empty list means valid.
+        List of validation error messages with actionable suggestions.
+        Empty list indicates the skill passed all validation checks.
+
+    Example:
+        >>> errors = validate(Path("my-skill"))
+        >>> if errors:
+        ...     for error in errors:
+        ...         print(f"Error: {error}")
+        ... else:
+        ...     print("Skill is valid!")
     """
     skill_dir = Path(skill_dir)
 

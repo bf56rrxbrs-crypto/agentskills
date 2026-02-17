@@ -30,14 +30,32 @@ def find_skill_md(skill_dir: Path) -> Optional[Path]:
 def parse_frontmatter(content: str) -> tuple[dict, str]:
     """Parse YAML frontmatter from SKILL.md content.
 
+    The frontmatter must be delimited by `---` lines at the start of the file.
+    The YAML must be a mapping (dictionary), not a list or scalar value.
+
     Args:
-        content: Raw content of SKILL.md file
+        content: Raw content of SKILL.md file, expected to start with `---`
 
     Returns:
-        Tuple of (metadata dict, markdown body)
+        Tuple of (metadata dict, markdown body). The metadata dict contains
+        all parsed frontmatter fields. If metadata contains a 'metadata' field,
+        its values are converted to strings.
 
     Raises:
-        ParseError: If frontmatter is missing or invalid
+        ParseError: If frontmatter is missing, improperly formatted, contains
+            invalid YAML syntax, or is not a YAML mapping (dict).
+
+    Example:
+        >>> content = '''---
+        ... name: my-skill
+        ... description: Test
+        ... ---
+        ... # Body content'''
+        >>> metadata, body = parse_frontmatter(content)
+        >>> metadata['name']
+        'my-skill'
+        >>> body
+        '# Body content'
     """
     if not content.startswith("---"):
         raise ParseError("SKILL.md must start with YAML frontmatter (---)")
