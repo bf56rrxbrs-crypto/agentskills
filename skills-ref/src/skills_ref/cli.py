@@ -1,6 +1,7 @@
 """CLI for skills-ref library."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -123,10 +124,9 @@ def auto_review_cmd(path: Path, output_json: bool, fix: bool):
     }
 
     # Change to the path directory if it's a directory
+    original_dir = None
     if path.is_dir():
         original_dir = Path.cwd()
-        import os
-
         os.chdir(path)
     else:
         click.echo("Error: Path must be a directory", err=True)
@@ -184,7 +184,7 @@ def auto_review_cmd(path: Path, output_json: bool, fix: bool):
         click.echo(f"Error: Required tool not found: {e}", err=True)
         sys.exit(1)
     finally:
-        if path.is_dir():
+        if original_dir is not None:
             os.chdir(original_dir)
 
     # Output results
