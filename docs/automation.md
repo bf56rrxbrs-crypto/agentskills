@@ -62,13 +62,13 @@ New `auto-review` command added to `skills-ref` CLI:
 
 ```bash
 # Run automated review
-skills-ref auto-review
+skills-ref auto-review .
 
 # Run and auto-fix issues
-skills-ref auto-review --fix
+skills-ref auto-review --fix .
 
 # Output as JSON
-skills-ref auto-review --json
+skills-ref auto-review --json .
 ```
 
 **Features:**
